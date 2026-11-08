@@ -1,1 +1,1306 @@
 
+```html
+<!DOCTYPE html>
+<html lang="fr" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASP Sénégal - Plateforme de Digitalisation & Sécurité de Proximité</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Leaflet CSS & JS for Maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Chart.js for Reports & Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            asp: {
+              green: '#00853f',
+              yellow: '#fdef42',
+              red: '#e31b23',
+              darkNavy: '#0f172a',
+              cardNavy: '#1e293b',
+              accentGreen: '#10b981',
+              accentBlue: '#3b82f6'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Pulse animation for alert indicators */
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.1); }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1.2s infinite ease-in-out;
+    }
+
+    /* Leaflet Map Styling Override */
+    .leaflet-container {
+      background-color: #0f172a !important;
+      font-family: 'Inter', sans-serif;
+    }
+    .leaflet-popup-content-wrapper {
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+    .leaflet-popup-tip {
+      background: #1e293b !important;
+    }
+
+    /* Senegalese Flag Accent Border */
+    .senegal-bar {
+      height: 4px;
+      background: linear-gradient(90deg, #00853f 33.33%, #fdef42 33.33%, #fdef42 66.66%, #e31b23 66.66%);
+    }
+
+    /* Mobile Mockup Glass effect */
+    .mobile-frame {
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-x-hidden selection:bg-emerald-500 selection:text-white">
+
+  <!-- TOP NATIONAL BANNER & SENEGALESE FLAG ACCENT -->
+  <div class="senegal-bar"></div>
+  <header class="bg-slate-950 border-b border-slate-800 px-4 py-3 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-lg bg-emerald-700/20 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-400 text-xl shadow-lg">
+        ASP
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-wide text-slate-100 flex items-center gap-2">
+          REPUBLIQUE DU SENEGAL
+          <span class="text-xs font-semibold px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-500/30">Ministère de l'Intérieur</span>
+        </h1>
+        <p class="text-xs text-slate-400">Agence d'Assistance à la Sécurité de Proximité • Solution Globale de Digitalisation</p>
+      </div>
+    </div>
+
+    <!-- MAIN APP VIEW TOGGLER (Web Pilotage vs Mobile Simulator) -->
+    <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-700">
+      <button id="tabBtnWeb" onclick="switchMainTab('web')" 
+        class="px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 bg-emerald-600 text-white shadow-md">
+        <i class="fa-solid font-bold fa-desktop"></i>
+        <span>Centre de Pilotage (Web)</span>
+      </button>
+      <button id="tabBtnMobile" onclick="switchMainTab('mobile')" 
+        class="px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-mobile-screen-button"></i>
+        <span>App Agent Terrain (Mobile)</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      </button>
+    </div>
+
+    <!-- Global Actions / Live Stats Badge -->
+    <div class="hidden lg:flex items-center space-x-4 text-xs text-slate-300">
+      <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+        <span>Système d'Alerte RSN: <strong class="text-emerald-400">Opérationnel</strong></span>
+      </div>
+      <div class="text-slate-400" id="liveClock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW CONTENT CONTAINERS -->
+  <main class="flex-1 overflow-y-auto bg-slate-950 p-3 sm:p-6">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: CENTRE DE PILOTAGE ET SUPERVISION WEB                             -->
+    <!-- ========================================================================= -->
+    <div id="viewWebSupervision" class="space-y-6">
+
+      <!-- TOP METRICS KPI CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- KPI 1 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="absolute top-0 right-0 w-2 h-full bg-emerald-500"></div>
+          <div>
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Agents ASP Déployés</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpiTotalAgents">1,248</h3>
+            <p class="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-square-check"></i> 14 Pôles Régionaux
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl border border-emerald-500/20">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="absolute top-0 right-0 w-2 h-full bg-blue-500"></div>
+          <div>
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Agents Actifs sur le Terrain</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpiActiveAgents">982</h3>
+            <p class="text-xs text-blue-400 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-location-dot"></i> GPS Signalé aujourd'hui
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl border border-blue-500/20">
+            <i class="fa-solid fa-walkie-talkie"></i>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="absolute top-0 right-0 w-2 h-full bg-amber-500"></div>
+          <div>
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Incidents en cours</p>
+            <h3 class="text-2xl font-extrabold text-amber-400 mt-1" id="kpiOpenIncidents">14</h3>
+            <p class="text-xs text-amber-300/80 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-triangle-exclamation"></i> Dont 3 Haute Priorité
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl border border-amber-500/20">
+            <i class="fa-solid fa-bell animate-bounce"></i>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between shadow-sm relative overflow-hidden group hover:border-slate-700 transition">
+          <div class="absolute top-0 right-0 w-2 h-full bg-purple-500"></div>
+          <div>
+            <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Incidents Résolus (Ce mois)</p>
+            <h3 class="text-2xl font-extrabold text-white mt-1" id="kpiResolvedIncidents">312</h3>
+            <p class="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-arrow-trend-up"></i> Taux de résolution 94%
+            </p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl border border-purple-500/20">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN WEB MODULES TABS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+        <div class="border-b border-slate-800 px-4 pt-3 flex flex-wrap gap-2 bg-slate-950">
+          <button onclick="switchWebSubTab('carto')" id="webSubTab_carto" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-2">
+            <i class="fa-solid fa-map-location-dot"></i> Carte Cartographie & Suivi GPS
+          </button>
+          <button onclick="switchWebSubTab('incidents')" id="webSubTab_incidents" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-list-check"></i> Gestion des Incidents & Alertes
+          </button>
+          <button onclick="switchWebSubTab('agents')" id="webSubTab_agents" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-users-gear"></i> Effectifs ASP & Présence
+          </button>
+          <button onclick="switchWebSubTab('directives')" id="webSubTab_directives" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-bullhorn"></i> Envoi Directives / Consignes
+          </button>
+          <button onclick="switchWebSubTab('partenaires')" id="webSubTab_partenaires" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-handshake"></i> Partenaires & Indemnisations
+          </button>
+          <button onclick="switchWebSubTab('stats')" id="webSubTab_stats" class="web-subtab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie"></i> Rapports & Analytics
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-6">
+
+          <!-- 1. CARTO & MAP SECTION -->
+          <div id="subTabContent_carto" class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-100">Supervision Nationale en Temps Réel</h3>
+                <p class="text-xs text-slate-400">Positionnement des agents ASP (vert), incidents ouverts (rouge) et établissements sécurisés sur le territoire national.</p>
+              </div>
+              <div class="flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded border border-slate-700">
+                  <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span> Agent ASP Actif
+                </span>
+                <span class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded border border-slate-700">
+                  <span class="w-3 h-3 rounded-full bg-red-500 inline-block animate-ping"></span> Alerte / Incident
+                </span>
+                <span class="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1 rounded border border-slate-700">
+                  <span class="w-3 h-3 rounded-full bg-blue-500 inline-block"></span> Établissement Scolaire / Quartier Sûr
+                </span>
+              </div>
+            </div>
+            
+            <!-- Map Container -->
+            <div id="mapSenegal" class="w-full h-[520px] rounded-xl border border-slate-800 shadow-inner z-10"></div>
+          </div>
+
+          <!-- 2. INCIDENTS TABLE SECTION -->
+          <div id="subTabContent_incidents" class="hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <h3 class="text-base font-bold text-slate-100">Registre National des Signalements & Incidents</h3>
+              <div class="flex items-center gap-2">
+                <select id="filterSeverity" onchange="filterIncidentsTable()" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-emerald-500">
+                  <option value="ALL">Toutes les gravités</option>
+                  <option value="CRITIQUE">Critique / Urgent</option>
+                  <option value="ELEVEE">Élevée</option>
+                  <option value="MOYENNE">Moyenne</option>
+                </select>
+                <select id="filterStatus" onchange="filterIncidentsTable()" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 focus:ring-1 focus:ring-emerald-500">
+                  <option value="ALL">Tous les statuts</option>
+                  <option value="EN_COURS">En cours de traitement</option>
+                  <option value="RESOLU">Résolu</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-800">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-950 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+                  <tr>
+                    <th class="px-4 py-3">ID Incident</th>
+                    <th class="px-4 py-3">Horodatage</th>
+                    <th class="px-4 py-3">Département / Zone</th>
+                    <th class="px-4 py-3">Catégorie</th>
+                    <th class="px-4 py-3">Agent ASP Référent</th>
+                    <th class="px-4 py-3">Gravité</th>
+                    <th class="px-4 py-3">Statut</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="incidentsTableBody" class="divide-y divide-slate-800">
+                  <!-- Dynamically Rendered -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. AGENTS & PRESENCE SECTION -->
+          <div id="subTabContent_agents" class="hidden space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 class="text-base font-bold text-slate-100">Gestion des Effectifs & Suivi de Présence GPS</h3>
+                <p class="text-xs text-slate-400">Pointeuse géographique et déploiement des agents de sécurité de proximité.</p>
+              </div>
+              <input type="text" id="searchAgentInput" onkeyup="filterAgentsTable()" placeholder="Rechercher agent ou CUD..." 
+                     class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 w-64 focus:ring-emerald-500">
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-lg"><i class="fa-solid fa-circle-check text-xl"></i></div>
+                <div>
+                  <p class="text-xs text-slate-400">Présence Validée GPS</p>
+                  <p class="text-lg font-bold text-white">912 Agents</p>
+                </div>
+              </div>
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-lg"><i class="fa-solid fa-clock text-xl"></i></div>
+                <div>
+                  <p class="text-xs text-slate-400">Prise de Service En Attente</p>
+                  <p class="text-lg font-bold text-white">70 Agents</p>
+                </div>
+              </div>
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                <div class="p-3 bg-red-500/10 text-red-400 rounded-lg"><i class="fa-solid fa-user-xmark text-xl"></i></div>
+                <div>
+                  <p class="text-xs text-slate-400">Absences Signalées</p>
+                  <p class="text-lg font-bold text-white">12 Agents</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto rounded-lg border border-slate-800">
+              <table class="w-full text-left text-xs text-slate-300">
+                <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
+                  <tr>
+                    <th class="px-4 py-3">Matricule</th>
+                    <th class="px-4 py-3">Nom & Prénom</th>
+                    <th class="px-4 py-3">Pôle / Région</th>
+                    <th class="px-4 py-3">Affectation (Quartier/École)</th>
+                    <th class="px-4 py-3">Dernier Ping GPS</th>
+                    <th class="px-4 py-3">Statut Présence</th>
+                  </tr>
+                </thead>
+                <tbody id="agentsTableBody" class="divide-y divide-slate-800">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4. BROADCAST DIRECTIVES SECTION -->
+          <div id="subTabContent_directives" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              <!-- Form to Send Broadcast -->
+              <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+                <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <i class="fa-solid fa-paper-plane text-emerald-400"></i> Émettre une Directive / Consigne
+                </h3>
+                <p class="text-xs text-slate-400">Diffuser des ordres de mission ou consignes de sécurité instantanément vers les terminaux mobiles des agents ASP sur le terrain.</p>
+                
+                <form id="directiveForm" onsubmit="handleSendDirective(event)" class="space-y-3">
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Cible de la diffusion</label>
+                    <select id="dirTarget" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:ring-emerald-500">
+                      <option value="TOUS">Tous les agents du Sénégal (Global)</option>
+                      <option value="Dakar">Pôle Dakar & Banlieue</option>
+                      <option value="Thiès">Pôle Thiès / Mbour</option>
+                      <option value="Saint-Louis">Pôle Nord (Saint-Louis)</option>
+                      <option value="Ziguinchor">Pôle Sud (Casamance)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Titre de la Consigne</label>
+                    <input type="text" id="dirTitle" required placeholder="Ex: Renforcement surveillance Établissements Scolaires" 
+                           class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:ring-emerald-500">
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Priorité</label>
+                    <select id="dirPriority" class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:ring-emerald-500">
+                      <option value="NORMALE">Normale</option>
+                      <option value="HAUTE">Haute / Vigilance</option>
+                      <option value="URGENTE">Urgent - Action Immédiate</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Détails des Directives</label>
+                    <textarea id="dirContent" rows="4" required placeholder="Saisir les consignes précises à exécuter sur le terrain..." 
+                              class="w-full bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-slate-200 focus:ring-emerald-500"></textarea>
+                  </div>
+
+                  <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-broadcast-tower"></i> Diffuser la directive
+                  </button>
+                </form>
+              </div>
+
+              <!-- Directive Broadcast History -->
+              <div class="lg:col-span-2 space-y-4">
+                <h3 class="text-sm font-bold text-slate-100">Historique des Directives Envoyées</h3>
+                <div id="directivesHistoryList" class="space-y-3">
+                  <!-- Dynamic directives -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 5. PARTNERS & INDEMNIFICATIONS SECTION -->
+          <div id="subTabContent_partenaires" class="hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              <!-- Institutional Partners -->
+              <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+                <div class="flex justify-between items-center">
+                  <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-handshake-angle text-emerald-400"></i> Partenaires Institutionnels & Sécurité
+                  </h3>
+                  <span class="text-xs text-slate-400">Coordination Multi-acteurs</span>
+                </div>
+                <div class="space-y-3" id="partnersListContainer">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+
+              <!-- Indemnifications & Benefits Tracking -->
+              <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-4">
+                <div class="flex justify-between items-center">
+                  <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-amber-400"></i> Suivi des Indemnisations & Précisions
+                  </h3>
+                  <span class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Mois en cours</span>
+                </div>
+                <p class="text-xs text-slate-400">Traçabilité des pécules et indemnisations mensuelles attribuées aux agents ASP.</p>
+
+                <div class="space-y-3" id="indemnitiesListContainer">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 6. STATS & ANALYTICS SECTION -->
+          <div id="subTabContent_stats" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <h4 class="text-xs font-bold text-slate-300 uppercase mb-4">Répartition des Incidents par Pôle Régional</h4>
+                <div class="relative h-64">
+                  <canvas id="chartIncidentsRegion"></canvas>
+                </div>
+              </div>
+              <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <h4 class="text-xs font-bold text-slate-300 uppercase mb-4">Typologie des Alertes Sécurité (Établissements & Quartiers)</h4>
+                <div class="relative h-64">
+                  <canvas id="chartIncidentTypes"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: SIMULATEUR APPLICATION MOBILE AGENT ASP (SMARTPHONE MOCKUP)      -->
+    <!-- ========================================================================= -->
+    <div id="viewMobileAgent" class="hidden flex justify-center items-center py-4">
+      
+      <!-- Smartphone Container -->
+      <div class="w-[380px] h-[740px] bg-slate-950 border-[10px] border-slate-800 rounded-[45px] shadow-2xl relative overflow-hidden flex flex-col mobile-frame border-t-[14px]">
+        
+        <!-- Phone Camera Notch / Dynamic Island -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-5 bg-slate-800 rounded-b-xl z-50 flex items-center justify-center">
+          <div class="w-3 h-3 rounded-full bg-slate-950"></div>
+        </div>
+
+        <!-- Phone Status Bar -->
+        <div class="bg-slate-900 pt-5 px-6 pb-2 flex justify-between items-center text-[10px] text-slate-400 font-mono z-40 border-b border-slate-800">
+          <span>09:41</span>
+          <span class="text-emerald-400 font-bold">ASP-4G SENEGAL</span>
+          <div class="flex items-center gap-1">
+            <i class="fa-solid fa-wifi"></i>
+            <i class="fa-solid fa-battery-three-quarters text-emerald-400"></i>
+          </div>
+        </div>
+
+        <!-- MOBILE APP HEADER -->
+        <div class="bg-slate-900 px-4 py-3 flex items-center justify-between border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-white text-xs">
+              ASP
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-100" id="mobileAgentName">Agent Modou Diop</p>
+              <p class="text-[10px] text-emerald-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Dakar-Plateau (CUD 01)
+              </p>
+            </div>
+          </div>
+          <button onclick="mobileLogout()" class="text-slate-400 hover:text-red-400 text-xs">
+            <i class="fa-solid fa-power-off"></i>
+          </button>
+        </div>
+
+        <!-- MOBILE SCREEN CONTENT SLOTS -->
+        <div class="flex-1 overflow-y-auto bg-slate-900 p-4 space-y-4" id="mobileScreenBody">
+          
+          <!-- MOBILE VIEW 1: LOGIN (Hidden by default, used if logged out) -->
+          <div id="mobileLoginScreen" class="hidden space-y-5 pt-8 text-center">
+            <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400 text-2xl">
+              <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-white">ASP Sécurité Terrain</h3>
+              <p class="text-xs text-slate-400">Authentification Agent Assermenté</p>
+            </div>
+            <form onsubmit="handleMobileLogin(event)" class="space-y-3 text-left">
+              <div>
+                <label class="text-[10px] text-slate-400">Matricule ASP</label>
+                <input type="text" value="ASP-2024-DK-88" required class="w-full bg-slate-950 border border-slate-700 text-xs rounded-lg p-2.5 text-white">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400">Code confidentiel</label>
+                <input type="password" value="123456" required class="w-full bg-slate-950 border border-slate-700 text-xs rounded-lg p-2.5 text-white">
+              </div>
+              <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow">
+                Se Connecter
+              </button>
+            </form>
+          </div>
+
+          <!-- MOBILE VIEW 2: DASHBOARD MAIN (Active) -->
+          <div id="mobileDashboardScreen" class="space-y-4">
+
+            <!-- Presence Geolocation Check-in Card -->
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i class="fa-solid fa-location-crosshairs text-emerald-400"></i> Signalement de Présence
+                </span>
+                <span id="presenceBadge" class="px-2 py-0.5 rounded-full text-[9px] bg-slate-800 text-amber-400 font-semibold border border-amber-500/30">Non Pointé</span>
+              </div>
+              <p class="text-[10px] text-slate-400">Validez votre position GPS sur votre lieu de surveillance attribué.</p>
+              
+              <div class="bg-slate-900 p-2 rounded-lg text-[10px] font-mono text-slate-300 flex justify-between items-center">
+                <span>GPS: <strong id="geoCoords">14.6937° N, 17.4441° W</strong></span>
+                <span class="text-emerald-400">Précision 3m</span>
+              </div>
+
+              <button id="btnCheckIn" onclick="handleMobilePresence()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow flex items-center justify-center gap-2">
+                <i class="fa-solid fa-fingerprint"></i> Signaler Ma Présence (Prise de Service)
+              </button>
+            </div>
+
+            <!-- Quick Incident Report Button -->
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-3">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> Signalement d'Incident
+              </span>
+              <p class="text-[10px] text-slate-400">Remonter immédiatement une alerte au Centre de Supervision & CUD.</p>
+
+              <button onclick="showMobileModal('incident')" class="w-full py-2.5 bg-gradient-to-r from-red-600 to-amber-600 text-white font-bold text-xs rounded-lg shadow flex items-center justify-center gap-2 animate-pulse">
+                <i class="fa-solid fa-bullhorn"></i> Déclarer un Incident / Alerte
+              </button>
+            </div>
+
+            <!-- Directives Inbox Quick View -->
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                  <i class="fa-solid fa-inbox text-blue-400"></i> Consignes & Directives
+                </span>
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+              </div>
+              <div id="mobileDirectivesList" class="space-y-2">
+                <!-- Directives list item injected -->
+              </div>
+            </div>
+
+            <!-- Emergency Contacts Widget -->
+            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+              <span class="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-phone-volume text-emerald-400"></i> Contacts d'Urgence Zone
+              </span>
+              <div class="grid grid-cols-2 gap-2 text-[10px]">
+                <a href="tel:18" class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-slate-200 hover:border-slate-700">
+                  <i class="fa-solid fa-fire-extinguisher text-red-400"></i> Sapeurs (18)
+                </a>
+                <a href="tel:17" class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-slate-200 hover:border-slate-700">
+                  <i class="fa-solid fa-building-shield text-blue-400"></i> Police (17)
+                </a>
+                <a href="tel:800002020" class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-slate-200 hover:border-slate-700">
+                  <i class="fa-solid fa-shield text-emerald-400"></i> Gendarmerie
+                </a>
+                <a href="#" onclick="alert('Appel CUD Dakar-Plateau en cours...')" class="bg-slate-900 p-2 rounded-lg border border-slate-800 flex items-center gap-2 text-slate-200 hover:border-slate-700">
+                  <i class="fa-solid fa-headset text-amber-400"></i> Chef CUD Local
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- MOBILE FOOTER NAV BAR -->
+        <div class="bg-slate-950 border-t border-slate-800 px-6 py-2 flex justify-around items-center text-slate-400 z-40">
+          <button onclick="mobileNav('home')" class="flex flex-col items-center gap-0.5 text-emerald-400">
+            <i class="fa-solid fa-house text-sm"></i>
+            <span class="text-[9px]">Accueil</span>
+          </button>
+          <button onclick="showMobileModal('incident')" class="flex flex-col items-center gap-0.5 hover:text-slate-200">
+            <i class="fa-solid fa-circle-plus text-sm text-red-500"></i>
+            <span class="text-[9px]">Alerter</span>
+          </button>
+          <button onclick="mobileNav('contacts')" class="flex flex-col items-center gap-0.5 hover:text-slate-200">
+            <i class="fa-solid fa-address-book text-sm"></i>
+            <span class="text-[9px]">Contacts</span>
+          </button>
+        </div>
+
+        <!-- PHONE BOTTOM HOME BAR -->
+        <div class="bg-slate-950 pb-1 flex justify-center">
+          <div class="w-28 h-1 bg-slate-700 rounded-full"></div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- MODAL: INCIDENT ACTION / DETAILS (WEB) -->
+  <div id="incidentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-lg overflow-hidden shadow-2xl">
+      <div class="bg-slate-950 px-5 py-3 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-file-invoice text-emerald-400"></i> Détails de l'Incident & Prise en Charge
+        </h3>
+        <button onclick="closeIncidentModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-5 space-y-4 text-xs text-slate-300" id="incidentModalBody">
+        <!-- Content inserted dynamically -->
+      </div>
+      <div class="bg-slate-950 px-5 py-3 border-t border-slate-800 flex justify-end gap-2">
+        <button onclick="closeIncidentModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">Fermer</button>
+        <button id="btnResolveModal" onclick="resolveCurrentIncident()" class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">Marquer comme Résolu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INCIDENT REPORT FORM (MOBILE SIMULATOR) -->
+  <div id="mobileIncidentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-xs overflow-hidden shadow-2xl">
+      <div class="bg-slate-950 px-4 py-3 border-b border-slate-800 flex justify-between items-center">
+        <h3 class="text-xs font-bold text-red-400 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i> Nouveau Signalement ASP
+        </h3>
+        <button onclick="closeMobileModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleMobileSubmitIncident(event)" class="p-4 space-y-3 text-xs">
+        <div>
+          <label class="block text-slate-400 mb-1">Catégorie d'incident</label>
+          <select id="mIncCategory" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <option value="Sécurité Scolaire">Sécurité Scolaire / Élèves</option>
+            <option value="Vol & Agression">Vol / Agression à la sauvette</option>
+            <option value="Inondation / Sinistre">Sinistre / Incendie / Inondation</option>
+            <option value="Trouble à l'Ordre Public">Trouble à l'Ordre Public</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Pôle / Zone concernée</label>
+          <select id="mIncZone" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <option value="Dakar - Grand Yoff">Dakar - Grand Yoff</option>
+            <option value="Dakar - Plateau">Dakar - Plateau</option>
+            <option value="Thiès - Mbour">Thiès - Mbour</option>
+            <option value="Saint-Louis">Saint-Louis - Centre</option>
+            <option value="Ziguinchor">Ziguinchor - Quartier Sûr</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Niveau d'Urgence</label>
+          <select id="mIncSeverity" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white">
+            <option value="MOYENNE">Moyenne</option>
+            <option value="ELEVEE">Élevée</option>
+            <option value="CRITIQUE">Critique (Intervention Immédiate)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-slate-400 mb-1">Description des faits</label>
+          <textarea id="mIncDesc" rows="3" required placeholder="Description succincte..." class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-white"></textarea>
+        </div>
+        <button type="submit" class="w-full py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow">
+          Transmettre au Centre de Supervision
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+  <!-- APPLICATION STATE & JAVASCRIPT LOGIC -->
+  <script>
+    /* ========================================================================= */
+    /* GLOBAL STATE & MOCK DATA                                                  */
+    /* ========================================================================= */
+    
+    // Mock Agents List
+    let agentsList = [
+      { id: "ASP-001", name: "Modou Diop", pole: "Dakar", zone: "Lycee Lamine Gueye", lat: 14.6937, lng: -17.4441, status: "Présent", lastPing: "A l'instant" },
+      { id: "ASP-002", name: "Fatou Sow", pole: "Dakar", zone: "Ecole Pikine 3", lat: 14.7544, lng: -17.3909, status: "Présent", lastPing: "Il y a 5 min" },
+      { id: "ASP-003", name: "Ibrahima Ndiaye", pole: "Thiès", zone: "Marché Central Thiès", lat: 14.7903, lng: -16.9260, status: "Présent", lastPing: "Il y a 2 min" },
+      { id: "ASP-004", name: "Awa Fall", pole: "Saint-Louis", zone: "Quartier Sor", lat: 16.0198, lng: -16.4896, status: "En Attente", lastPing: "Hier" },
+      { id: "ASP-005", name: "Ousmane Sane", pole: "Ziguinchor", zone: "CEM Ziguinchor", lat: 12.5681, lng: -16.2733, status: "Présent", lastPing: "Il y a 12 min" },
+      { id: "ASP-006", name: "Cheikh Bamba", pole: "Kaolack", zone: "Gare Routière Kaolack", lat: 14.1546, lng: -16.0758, status: "Présent", lastPing: "Il y a 8 min" }
+    ];
+
+    // Mock Incidents List
+    let incidentsList = [
+      { id: "INC-2024-089", timestamp: "10/10/2024 08:30", zone: "Dakar - Grand Yoff", category: "Sécurité Scolaire", agent: "Modou Diop", severity: "CRITIQUE", status: "EN_COURS", desc: "Altercation signalée devant l'établissement scolaire entre groupes de jeunes. Intervention requise.", lat: 14.7242, lng: -17.4589 },
+      { id: "INC-2024-088", timestamp: "10/10/2024 07:15", zone: "Thiès - Mbour", category: "Vol & Agression", agent: "Ibrahima Ndiaye", severity: "MOYENNE", status: "RESOLU", desc: "Tentative de vol à la tire rapidement neutralisée par l'agent ASP sur place.", lat: 14.4220, lng: -16.9638 },
+      { id: "INC-2024-087", timestamp: "09/10/2024 16:45", zone: "Saint-Louis", category: "Inondation / Sinistre", agent: "Awa Fall", severity: "ELEVEE", status: "RESOLU", desc: "Accumulation des eaux obstruant l'accès à l'école primaire du quartier.", lat: 16.0300, lng: -16.4950 }
+    ];
+
+    // Mock Directives List
+    let directivesList = [
+      { id: 1, target: "TOUS", title: "Vigilance Accrue Établissements Scolaires", priority: "HAUTE", date: "10/10/2024 07:00", content: "Renforcer la présence physique aux heures de rentrée et de sortie des classes (07h30 - 12h00 - 16h00)." },
+      { id: 2, target: "Dakar", title: "Dispositif Quartiers Sûrs - Grand Yoff", priority: "URGENTE", date: "09/10/2024 14:00", content: "Patrouilles pédestres coordonnées avec la Police Nationale dans les axes commerciaux." }
+    ];
+
+    // Mock Partners List
+    const partnersList = [
+      { name: "Police Nationale du Sénégal", type: "Force de Sécurité", contact: "17 / Centre d'Opérations", role: "Intervention d'urgence & Support opérationnel" },
+      { name: "Gendarmerie Nationale", type: "Force de Sécurité", contact: "800 00 20 20", role: "Coordination des zones périrurbaines et rurales" },
+      { name: "Sapeurs-Pompiers (BNSP)", type: "Secours & Protection Civile", contact: "18", role: "Prise en charge médicale et secours d'urgence" },
+      { name: "Ministère de l'Éducation Nationale", type: "Partenaire Institutionnel", contact: "Direction des Écoles", role: "Protection des infrastructures scolaires et élèves" }
+    ];
+
+    // Mock Indemnities Tracking
+    const indemnitiesList = [
+      { agent: "Modou Diop (ASP-001)", amount: "50 000 FCFA", status: "Payé / Virement", date: "01/10/2024" },
+      { agent: "Fatou Sow (ASP-002)", amount: "50 000 FCFA", status: "Payé / Virement", date: "01/10/2024" },
+      { agent: "Ibrahima Ndiaye (ASP-003)", amount: "50 000 FCFA", status: "En cours de validation", date: "En attente" }
+    ];
+
+    let leafletMap = null;
+    let mapMarkers = [];
+    let activeSelectedIncidentId = null;
+
+    /* ========================================================================= */
+    /* INITIALIZATION & LIFECYCLE                                                */
+    /* ========================================================================= */
+    window.onload = function() {
+      startLiveClock();
+      initLeafletMap();
+      renderIncidentsTable();
+      renderAgentsTable();
+      renderDirectivesList();
+      renderPartnersAndIndemnities();
+      initCharts();
+    };
+
+    function startLiveClock() {
+      setInterval(() => {
+        const now = new Date();
+        document.getElementById('liveClock').innerText = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR');
+      }, 1000);
+    }
+
+    /* MAIN VIEW TAB TOGGLER (Web Supervision vs Mobile App) */
+    function switchMainTab(tabName) {
+      const btnWeb = document.getElementById('tabBtnWeb');
+      const btnMobile = document.getElementById('tabBtnMobile');
+      const viewWeb = document.getElementById('viewWebSupervision');
+      const viewMobile = document.getElementById('viewMobileAgent');
+
+      if (tabName === 'web') {
+        btnWeb.className = "px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 bg-emerald-600 text-white shadow-md";
+        btnMobile.className = "px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white";
+        viewWeb.classList.remove('hidden');
+        viewMobile.classList.add('hidden');
+        // Refresh map layout
+        if (leafletMap) setTimeout(() => leafletMap.invalidateSize(), 200);
+      } else {
+        btnMobile.className = "px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 bg-emerald-600 text-white shadow-md";
+        btnWeb.className = "px-4 py-2 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 text-slate-400 hover:text-white";
+        viewMobile.classList.remove('hidden');
+        viewWeb.classList.add('hidden');
+      }
+    }
+
+    /* WEB SUB-TABS TOGGLER */
+    function switchWebSubTab(subTabId) {
+      document.querySelectorAll('.web-subtab-btn').forEach(btn => {
+        btn.classList.remove('border-emerald-500', 'text-emerald-400');
+        btn.classList.add('border-transparent', 'text-slate-400');
+      });
+      const activeBtn = document.getElementById(`webSubTab_${subTabId}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        activeBtn.classList.add('border-emerald-500', 'text-emerald-400');
+      }
+
+      const contents = ['carto', 'incidents', 'agents', 'directives', 'partenaires', 'stats'];
+      contents.forEach(c => {
+        const el = document.getElementById(`subTabContent_${c}`);
+        if (el) el.classList.add('hidden');
+      });
+
+      const activeContent = document.getElementById(`subTabContent_${subTabId}`);
+      if (activeContent) activeContent.classList.remove('hidden');
+
+      if (subTabId === 'carto' && leafletMap) {
+        setTimeout(() => leafletMap.invalidateSize(), 150);
+      }
+    }
+
+    /* ========================================================================= */
+    /* LEAFLET MAP INTEGRATION (SENEGAL REGIONS)                                 */
+    /* ========================================================================= */
+    function initLeafletMap() {
+      // Center of Senegal
+      leafletMap = L.map('mapSenegal').setView([14.4974, -14.4524], 7);
+
+      // Dark Theme Map Tiles
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        maxZoom: 18
+      }).addTo(leafletMap);
+
+      refreshMapMarkers();
+    }
+
+    function refreshMapMarkers() {
+      if (!leafletMap) return;
+      // Clear old markers
+      mapMarkers.forEach(m => leafletMap.removeLayer(m));
+      mapMarkers = [];
+
+      // Custom Icon Generators
+      const agentIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #10b981; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 8px #10b981;"></div>`,
+        iconSize: [14, 14]
+      });
+
+      const incidentIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color: #ef4444; width: 18px; height: 18px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 12px #ef4444;" class="animate-ping"></div>`,
+        iconSize: [18, 18]
+      });
+
+      // Add Agents Markers
+      agentsList.forEach(ag => {
+        const marker = L.marker([ag.lat, ag.lng], { icon: agentIcon })
+          .addTo(leafletMap)
+          .bindPopup(`
+            <div class="p-1">
+              <strong class="text-emerald-400">${ag.name} (${ag.id})</strong><br/>
+              <span class="text-xs">Zone: ${ag.zone}</span><br/>
+              <span class="text-[10px] text-slate-400">Statut: ${ag.status}</span>
+            </div>
+          `);
+        mapMarkers.push(marker);
+      });
+
+      // Add Incidents Markers
+      incidentsList.filter(i => i.status === 'EN_COURS').forEach(inc => {
+        const marker = L.marker([inc.lat, inc.lng], { icon: incidentIcon })
+          .addTo(leafletMap)
+          .bindPopup(`
+            <div class="p-1">
+              <strong class="text-red-400">${inc.id} - ${inc.category}</strong><br/>
+              <span class="text-xs">${inc.zone}</span><br/>
+              <p class="text-[10px] text-slate-300 mt-1">${inc.desc}</p>
+              <button onclick="openIncidentDetails('${inc.id}')" class="mt-2 text-[10px] bg-emerald-600 text-white px-2 py-1 rounded">Traiter Alerte</button>
+            </div>
+          `);
+        mapMarkers.push(marker);
+      });
+    }
+
+    /* ========================================================================= */
+    /* INCIDENTS MANAGEMENT TABLE                                                */
+    /* ========================================================================= */
+    function renderIncidentsTable() {
+      const tbody = document.getElementById('incidentsTableBody');
+      const sevFilter = document.getElementById('filterSeverity').value;
+      const statusFilter = document.getElementById('filterStatus').value;
+
+      tbody.innerHTML = '';
+
+      const filtered = incidentsList.filter(item => {
+        if (sevFilter !== 'ALL' && item.severity !== sevFilter) return false;
+        if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
+        return true;
+      });
+
+      filtered.forEach(inc => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-900/60 transition";
+
+        let sevBadge = 'bg-slate-800 text-slate-300';
+        if (inc.severity === 'CRITIQUE') sevBadge = 'bg-red-500/20 text-red-400 border border-red-500/30';
+        if (inc.severity === 'ELEVEE') sevBadge = 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+        if (inc.severity === 'MOYENNE') sevBadge = 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+
+        let statusBadge = inc.status === 'EN_COURS' 
+          ? '<span class="px-2 py-0.5 rounded-full text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span> En cours</span>'
+          : '<span class="px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 w-fit"><i class="fa-solid fa-check text-[8px]"></i> Résolu</span>';
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold text-slate-200">${inc.id}</td>
+          <td class="px-4 py-3 text-slate-400">${inc.timestamp}</td>
+          <td class="px-4 py-3 font-medium text-white">${inc.zone}</td>
+          <td class="px-4 py-3 text-slate-300">${inc.category}</td>
+          <td class="px-4 py-3 text-emerald-400">${inc.agent}</td>
+          <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-[10px] font-semibold ${sevBadge}">${inc.severity}</span></td>
+          <td class="px-4 py-3">${statusBadge}</td>
+          <td class="px-4 py-3 text-right">
+            <button onclick="openIncidentDetails('${inc.id}')" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] border border-slate-700 transition">
+              <i class="fa-solid fa-eye"></i> Gérer
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Update KPI counter
+      document.getElementById('kpiOpenIncidents').innerText = incidentsList.filter(i => i.status === 'EN_COURS').length;
+      document.getElementById('kpiResolvedIncidents').innerText = incidentsList.filter(i => i.status === 'RESOLU').length;
+    }
+
+    function filterIncidentsTable() {
+      renderIncidentsTable();
+    }
+
+    function openIncidentDetails(incId) {
+      const inc = incidentsList.find(i => i.id === incId);
+      if (!inc) return;
+
+      activeSelectedIncidentId = incId;
+      const modalBody = document.getElementById('incidentModalBody');
+      const btnResolve = document.getElementById('btnResolveModal');
+
+      modalBody.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
+          <div><span class="text-slate-500">ID Incident:</span> <strong class="text-slate-200 font-mono">${inc.id}</strong></div>
+          <div><span class="text-slate-500">Date/Heure:</span> <span class="text-slate-300">${inc.timestamp}</span></div>
+          <div><span class="text-slate-500">Zone:</span> <span class="text-white font-semibold">${inc.zone}</span></div>
+          <div><span class="text-slate-500">Agent Référent:</span> <span class="text-emerald-400">${inc.agent}</span></div>
+        </div>
+        <div>
+          <label class="text-slate-400 font-semibold block mb-1">Catégorie & Gravité:</label>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-1 rounded bg-slate-800 text-slate-200 font-medium">${inc.category}</span>
+            <span class="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/30">${inc.severity}</span>
+          </div>
+        </div>
+        <div>
+          <label class="text-slate-400 font-semibold block mb-1">Description détaillée du signalement:</label>
+          <p class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-slate-300 leading-relaxed">${inc.desc}</p>
+        </div>
+      `;
+
+      if (inc.status === 'RESOLU') {
+        btnResolve.classList.add('hidden');
+      } else {
+        btnResolve.classList.remove('hidden');
+      }
+
+      document.getElementById('incidentModal').classList.remove('hidden');
+    }
+
+    function closeIncidentModal() {
+      document.getElementById('incidentModal').classList.add('hidden');
+    }
+
+    function resolveCurrentIncident() {
+      if (!activeSelectedIncidentId) return;
+      const inc = incidentsList.find(i => i.id === activeSelectedIncidentId);
+      if (inc) {
+        inc.status = 'RESOLU';
+        showToast("Incident mis à jour", `L'incident ${inc.id} a été marqué comme résolu.`);
+        renderIncidentsTable();
+        refreshMapMarkers();
+        closeIncidentModal();
+      }
+    }
+
+    /* ========================================================================= */
+    /* AGENTS MANAGEMENT TABLE                                                   */
+    /* ========================================================================= */
+    function renderAgentsTable() {
+      const tbody = document.getElementById('agentsTableBody');
+      tbody.innerHTML = '';
+
+      agentsList.forEach(ag => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-900/60 transition";
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono font-bold text-emerald-400">${ag.id}</td>
+          <td class="px-4 py-3 text-white font-medium">${ag.name}</td>
+          <td class="px-4 py-3 text-slate-400">${ag.pole}</td>
+          <td class="px-4 py-3 text-slate-300">${ag.zone}</td>
+          <td class="px-4 py-3 font-mono text-[11px] text-slate-400">${ag.lastPing}</td>
+          <td class="px-4 py-3">
+            <span class="px-2.5 py-1 rounded-full text-[10px] ${ag.status === 'Présent' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400'}">
+              ${ag.status}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterAgentsTable() {
+      const term = document.getElementById('searchAgentInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#agentsTableBody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(term) ? '' : 'none';
+      });
+    }
+
+    /* ========================================================================= */
+    /* DIRECTIVES BROADCAST                                                      */
+    /* ========================================================================= */
+    function renderDirectivesList() {
+      const container = document.getElementById('directivesHistoryList');
+      const mobileList = document.getElementById('mobileDirectivesList');
+
+      container.innerHTML = '';
+      mobileList.innerHTML = '';
+
+      directivesList.forEach(dir => {
+        // Web Render
+        const item = document.createElement('div');
+        item.className = "bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2";
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-bullhorn"></i> ${dir.title}
+            </h4>
+            <span class="px-2 py-0.5 text-[10px] rounded bg-slate-800 text-slate-400">Cible: ${dir.target}</span>
+          </div>
+          <p class="text-xs text-slate-300">${dir.content}</p>
+          <div class="flex justify-between items-center text-[10px] text-slate-500 pt-1 border-t border-slate-900">
+            <span>Priorité: <strong class="text-amber-400">${dir.priority}</strong></span>
+            <span>Diffusé le: ${dir.date}</span>
+          </div>
+        `;
+        container.appendChild(item);
+
+        // Mobile Render (Only latest 2)
+        const mItem = document.createElement('div');
+        mItem.className = "bg-slate-900 p-2.5 rounded-lg border border-slate-800 space-y-1 text-[10px]";
+        mItem.innerHTML = `
+          <div class="flex justify-between font-bold text-slate-200">
+            <span>${dir.title}</span>
+            <span class="text-amber-400 font-mono">${dir.priority}</span>
+          </div>
+          <p class="text-slate-400 leading-tight">${dir.content}</p>
+        `;
+        mobileList.appendChild(mItem);
+      });
+    }
+
+    function handleSendDirective(e) {
+      e.preventDefault();
+      const target = document.getElementById('dirTarget').value;
+      const title = document.getElementById('dirTitle').value;
+      const priority = document.getElementById('dirPriority').value;
+      const content = document.getElementById('dirContent').value;
+
+      const newDir = {
+        id: Date.now(),
+        target,
+        title,
+        priority,
+        date: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR'),
+        content
+      };
+
+      directivesList.unshift(newDir);
+      renderDirectivesList();
+      document.getElementById('directiveForm').reset();
+      showToast("Directive Diffusée", `Consigne envoyée avec succès aux terminaux de la zone [${target}].`);
+    }
+
+    /* ========================================================================= */
+    /* PARTNERS & INDEMNIFICATIONS                                               */
+    /* ========================================================================= */
+    function renderPartnersAndIndemnities() {
+      const pContainer = document.getElementById('partnersListContainer');
+      pContainer.innerHTML = '';
+      partnersList.forEach(p => {
+        pContainer.innerHTML += `
+          <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+            <div>
+              <h5 class="font-bold text-slate-200">${p.name}</h5>
+              <p class="text-[10px] text-slate-400">${p.role}</p>
+            </div>
+            <div class="text-right">
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">${p.type}</span>
+              <p class="text-[10px] font-mono text-slate-400 mt-1">${p.contact}</p>
+            </div>
+          </div>
+        `;
+      });
+
+      const iContainer = document.getElementById('indemnitiesListContainer');
+      iContainer.innerHTML = '';
+      indemnitiesList.forEach(ind => {
+        iContainer.innerHTML += `
+          <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+            <div>
+              <h5 class="font-bold text-white">${ind.agent}</h5>
+              <p class="text-[10px] text-slate-400">Date d'échéance: ${ind.date}</p>
+            </div>
+            <div class="text-right">
+              <strong class="text-emerald-400 font-mono text-sm">${ind.amount}</strong>
+              <p class="text-[10px] text-slate-400">${ind.status}</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    /* ========================================================================= */
+    /* CHART.JS ANALYTICS                                                        */
+    /* ========================================================================= */
+    function initCharts() {
+      // 1. Incidents by Region Chart
+      const ctxRegion = document.getElementById('chartIncidentsRegion').getContext('2d');
+      new Chart(ctxRegion, {
+        type: 'bar',
+        data: {
+          labels: ['Dakar', 'Thiès', 'Saint-Louis', 'Kaolack', 'Ziguinchor', 'Diourbel'],
+          datasets: [{
+            label: 'Incidents Signalés',
+            data: [45, 28, 14, 19, 22, 11],
+            backgroundColor: '#10b981',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+          }
+        }
+      });
+
+      // 2. Incident Types Pie Chart
+      const ctxTypes = document.getElementById('chartIncidentTypes').getContext('2d');
+      new Chart(ctxTypes, {
+        type: 'doughnut',
+        data: {
+          labels: ['Sécurité Scolaire', 'Vol & Agression', 'Sinistres', 'Troubles Publics'],
+          datasets: [{
+            data: [40, 25, 20, 15],
+            backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 12 } }
+          }
+        }
+      });
+    }
+
+    /* ========================================================================= */
+    /* SIMULATEUR APPLICATION MOBILE AGENT                                       */
+    /* ========================================================================= */
+    function handleMobilePresence() {
+      const btn = document.getElementById('btnCheckIn');
+      const badge = document.getElementById('presenceBadge');
+      
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Géolocalisation GPS en cours...`;
+
+      setTimeout(() => {
+        btn.className = "w-full py-2 bg-slate-800 text-emerald-400 text-xs font-bold rounded-lg border border-emerald-500/40 flex items-center justify-center gap-2 cursor-default";
+        btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Prise de Service Confirmée`;
+        
+        badge.className = "px-2 py-0.5 rounded-full text-[9px] bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30";
+        badge.innerText = "Présence Validée";
+
+        // Update Modou Diop status in agents list
+        const modou = agentsList.find(a => a.id === 'ASP-001');
+        if (modou) {
+          modou.status = 'Présent';
+          modou.lastPing = 'À l’instant';
+          renderAgentsTable();
+        }
+
+        showToast("Signalement de Présence GPS", "Votre position (Dakar-Plateau) a été transmise au Centre de Supervision.");
+      }, 1200);
+    }
+
+    function showMobileModal(type) {
+      if (type === 'incident') {
+        document.getElementById('mobileIncidentModal').classList.remove('hidden');
+      }
+    }
+
+    function closeMobileModal() {
+      document.getElementById('mobileIncidentModal').classList.add('hidden');
+    }
+
+    function handleMobileSubmitIncident(e) {
+      e.preventDefault();
+      const cat = document.getElementById('mIncCategory').value;
+      const zone = document.getElementById('mIncZone').value;
+      const sev = document.getElementById('mIncSeverity').value;
+      const desc = document.getElementById('mIncDesc').value;
+
+      const newInc = {
+        id: `INC-2024-0${Math.floor(Math.random() * 90 + 10)}`,
+        timestamp: new Date().toLocaleDateString('fr-FR') + ' ' + new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}),
+        zone,
+        category: cat,
+        agent: "Modou Diop",
+        severity: sev,
+        status: "EN_COURS",
+        desc,
+        lat: 14.6937 + (Math.random() * 0.04 - 0.02),
+        lng: -17.4441 + (Math.random() * 0.04 - 0.02)
+      };
+
+      incidentsList.unshift(newInc);
+      renderIncidentsTable();
+      refreshMapMarkers();
+      closeMobileModal();
+
+      showToast("Incident Alerte Transmis !", `L'incident ${newInc.id} est maintenant visible sur le tableau de supervision national.`);
+    }
+
+    function mobileLogout() {
+      document.getElementById('mobileDashboardScreen').classList.add('hidden');
+      document.getElementById('mobileLoginScreen').classList.remove('hidden');
+    }
+
+    function handleMobileLogin(e) {
+      e.preventDefault();
+      document.getElementById('mobileLoginScreen').classList.add('hidden');
+      document.getElementById('mobileDashboardScreen').classList.remove('hidden');
+      showToast("Connexion Réussie", "Bienvenue Agent Modou Diop sur l'application ASP Mobile.");
+    }
+
+    function mobileNav(target) {
+      if (target === 'contacts') {
+        alert("Répertoire d'urgence prêt. Pour composer un numéro d'urgence, touchez directement les raccourcis à l'écran.");
+      }
+    }
+
+    /* ========================================================================= */
+    /* UTILITY: TOAST NOTIFICATIONS                                             */
+    /* ========================================================================= */
+    function showToast(title, message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = "bg-slate-900 border border-emerald-500/50 text-white p-3 rounded-xl shadow-2xl flex items-start gap-3 w-80 transform transition-all duration-300 translate-y-2 opacity-0";
+      
+      toast.innerHTML = `
+        <div class="text-emerald-400 text-lg mt-0.5"><i class="fa-solid fa-circle-info"></i></div>
+        <div class="flex-1 text-xs">
+          <strong class="block font-bold text-slate-100">${title}</strong>
+          <span class="text-slate-400 leading-snug">${message}</span>
+        </div>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
+```
